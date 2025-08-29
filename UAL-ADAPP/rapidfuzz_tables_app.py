@@ -133,5 +133,6 @@ params_dict = {
     }
 }
 
-resultados = execute_dynamic_matching(params_dict, score_cutoff=80)
+resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
+matches_filtrados = [r for r in resultados if r.get('score', 0) > 70]  
 print(resultados)

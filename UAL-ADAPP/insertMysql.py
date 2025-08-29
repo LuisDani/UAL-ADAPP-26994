@@ -21,90 +21,61 @@ def parse_date(date_str):
     except ValueError:
         return None
 
-def insert_clientes():
-    """Clientes de la base de datos crm"""
-    connection = connect_to_db('crm')
-    if not connection:
-        return
-    
+# Nueva función genérica para insertar desde CSV
+def insert_from_csv(connection, table, columns, csv_file, parse_funcs=None):
     cursor = connection.cursor()
-    insert_query = """
-    INSERT INTO Clientes (cliente_id, nombre, apellido, email, FechaRegistro)
-    VALUES (%s, %s, %s, %s, %s)
-    """
-    
+    placeholders = ', '.join(['%s'] * len(columns))
+    insert_query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+    rows = []
     try:
-        with open('clientes.csv', 'r', encoding='utf-8') as file:
+        with open(csv_file, 'r', encoding='utf-8') as file:
             csv_reader = csv.DictReader(file)
             for row in csv_reader:
-                data = (
-                    int(row['cliente_id']),
-                    row['nombre'],
-                    row['apellido'],
-                    row['email'],
-                    parse_date(row['fecha_registro'])
-                )
-                cursor.execute(insert_query, data)
-        
-        connection.commit()
-        print(f"Se insertaron {cursor.rowcount} registros en la tabla Clientes (crm)")
-    
+                data = [] 
+                for i, col in enumerate(columns):
+                    value = row[col]
+                    if parse_funcs and parse_funcs.get(col):
+                        value = parse_funcs[col](value)
+                    data.append(value)
+                rows.append(tuple(data))
+        if rows:
+            cursor.executemany(insert_query, rows)  # Usar executemany para eficiencia
+            connection.commit()
+            print(f"Se insertaron {cursor.rowcount} registros en la tabla {table}")
+        else:
+            print(f"No hay datos para insertar en {table}")
     except Exception as error:
-        print(f"Error al insertar clientes: {error}")
+        print(f"Error al insertar en {table}: {error}")
     finally:
         cursor.close()
-        connection.close()
-
-def insert_usuarios():
-    """Usuarios de la base de datos dbo"""
-    connection = connect_to_db('dbo')
-    if not connection:
-        return
-    
-    cursor = connection.cursor()
-    insert_query = """
-    INSERT INTO Usuarios (userId, username, first_name, last_name, email, 
-                         password_hash, rol, fecha_creacion)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    
-    try:
-        with open('usuarios.csv', 'r', encoding='utf-8') as file:
-            csv_reader = csv.DictReader(file)
-            for row in csv_reader:
-                data = (
-                    int(row['userId']),
-                    row['username'],
-                    row['first_name'],
-                    row['last_name'],
-                    row['email'],
-                    row['password_hash'],
-                    row['rol'],
-                    parse_date(row['fecha_creacion'])
-                )
-                cursor.execute(insert_query, data)
-        
-        connection.commit()
-        print(f"Se insertaron {cursor.rowcount} registros en la tabla Usuarios (dbo)")
-    
-    except Exception as error:
-        print(f"Error al insertar usuarios: {error}")
-    finally:
-        cursor.close()
-        connection.close()
 
 def main():
-    # Inserta datos
     print("Iniciando inserción de datos...")
-    
-    # crm
+
     print("\nInsertando datos en la tabla Clientes...")
-    insert_clientes()
-    
-    # dbo
+    crm_conn = connect_to_db('crm')
+    if crm_conn:
+        insert_from_csv(
+            crm_conn,
+            'Clientes',
+            ['cliente_id', 'nombre', 'apellido', 'email', 'FechaRegistro'],
+            './UAL-ADAPP/clientes.csv',
+            parse_funcs={'cliente_id': int, 'FechaRegistro': parse_date}
+        )
+        crm_conn.close()
+
     print("\nInsertando datos en la tabla Usuarios...")
-    insert_usuarios()
-    
+    dbo_conn = connect_to_db('dbo')
+    if dbo_conn:
+        insert_from_csv(
+            dbo_conn,
+            'Usuarios',
+            ['userId', 'username', 'first_name', 'last_name', 'email', 'password_hash', 'rol', 'fecha_creacion'],
+            './UAL-ADAPP/usuarios.csv',
+            parse_funcs={'userId': int, 'fecha_creacion': parse_date}
+        )
+        dbo_conn.close()
+
     print("\nProceso completado.")
 
 if __name__ == "__main__":
