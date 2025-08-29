@@ -58,9 +58,9 @@ def main():
         insert_from_csv(
             crm_conn,
             'Clientes',
-            ['cliente_id', 'nombre', 'apellido', 'email', 'FechaRegistro'],
+            ['cliente_id', 'nombre', 'apellido', 'email', 'fecha_registro'],
             './UAL-ADAPP/clientes.csv',
-            parse_funcs={'cliente_id': int, 'FechaRegistro': parse_date}
+            parse_funcs={'cliente_id': int, 'fecha_registro': parse_date}
         )
         crm_conn.close()
 
@@ -71,7 +71,7 @@ def main():
             dbo_conn,
             'Usuarios',
             ['userId', 'username', 'first_name', 'last_name', 'email', 'password_hash', 'rol', 'fecha_creacion'],
-            './UAL-ADAPP/usuarios.csv',
+            'usuarios.csv',
             parse_funcs={'userId': int, 'fecha_creacion': parse_date}
         )
         dbo_conn.close()
