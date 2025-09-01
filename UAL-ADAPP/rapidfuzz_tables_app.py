@@ -12,8 +12,20 @@ params_dict = {
     }
 }
 
-
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 matches_filtrados = [r for r in resultados if r.get('score', 0) > 70]  
 df = pd.DataFrame(matches_filtrados)
-print(df)
+
+
+def chose_output(matches_filtrados, df):
+    choose =  input("¿Desea imprimir los resultados en un DataFrame o en un Diccionario? (df/d): ").lower()
+    if choose == 'df':
+        return df
+    elif choose == 'd':
+        return matches_filtrados
+    else:
+        print("Opción no válida. Por favor, elija 'df' o 'd'.")
+        return None
+
+filtro = chose_output(matches_filtrados, df)
+print(filtro)
