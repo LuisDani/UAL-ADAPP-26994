@@ -332,7 +332,49 @@ def import_data():
         print(f"Error al leer el archivo: {e}")
         return None
 
-def insert_to_mysql(df):
+def insert_to_mysql_with_sp(df):
+    if df is None or df.empty:
+        print("DataFrame vacío. No hay datos para insertar.")
+        return
+    
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user='root',
+            password='',
+            database='dbo'
+        )
+        cursor = connection.cursor()
+
+        required_columns = [
+            'nombre', 'apellido', 'email', 'match_query', 
+            'match_result', 'score', 'match_result_values', 
+            'destTable', 'sourceTable'
+        ]
+
+        # Filtrar por high score
+        df['score_numeric'] = pd.to_numeric(df['score'].astype(str).str.replace('%', ''), errors='coerce')
+        df_high = df[df['score_numeric'] >= 97].copy()
+        
+        if df_high.empty:
+            print("No hay registros con score >= 97% para insertar.")
+            return
+
+        for _, row in df_high.iterrows():
+            args = tuple(row.get(col, None) for col in required_columns)
+            cursor.callproc('insert_matched_record', args)
+
+        connection.commit()
+        print(f"{len(df_high)} registros insertados usando stored procedure.")
+
+    except mysql.connector.Error as error:
+        print(f"Error de MySQL: {error}")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a MySQL cerrada.")
+
     if df is None or df.empty:
         print("DataFrame vacío. No hay datos para insertar.")
         return
@@ -450,4 +492,4 @@ def insert_to_mysql(df):
 
 #matched_record(df)
 df_importado = import_data()
-insert_to_mysql(df_importado)
+insert_to_mysql_with_sp(df_importado)

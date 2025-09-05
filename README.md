@@ -78,3 +78,21 @@ insert_from_csv(
     'clientes.csv',
     parse_funcs={'cliente_id': int, 'fecha_registro': parse_date}
 )
+
+## 6. implementacion del stored procedure
+
+Para mejorar el rendimiento del sistema al insertar datos en la tabla `matched_record`, se reemplazó la lógica de inserción desde Python por una stored procedure ejecutada directamente desde MySQL.
+
+### Cambios implementados:
+- Se creó la stored procedure `sp_insertcrmusuarios_01`.
+- Se modificó el archivo `rapidfuzz_tables.py` para invocar esta stored procedure.
+- La lógica ahora filtra solo registros con `score >= 97%` para insertar.
+- La stored procedure se encuentra en el directorio `scripts/`.
+
+### Cómo ejecutar la stored procedure
+
+Antes de ejecutar el código, asegúrate de haber creado la SP en MySQL:
+
+```bash
+mysql -u root -p dbo < scripts/sp_insertcrmusuarios_01.sql
+
