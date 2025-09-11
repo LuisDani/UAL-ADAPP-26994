@@ -1,0 +1,32 @@
+1. How does the algorithm behave if there are typos in the LastName? (e.g.."Perezz vs Perez")
+En el código, la función fuzzy_match() usa varios scorers de RapidFuzz (WRatio, QRatio, token_set_ratio, ratio).
+Como el apellido se concatena dentro de queryMatch, un error ortográfico leve no cambia mucho la similitud.
+Resultado: "Perezz" y "Perez" obtendrán un score alto (ejemplo: 95–98), porque la diferencia es de solo un carácter.
+El algoritmo devolverá este registro como mejor match.
+
+2. What if accents or special characters are missing (e.g.. "Pérez" vs"Perez")?
+El código convierte todo a minúsculas con processor = lambda x: str(x).lower(), pero no elimina acentos.
+"Pérez" y "Perez" no son idénticos, pero siguen muy parecidos.
+Resultado: el score será alto, aunque ligeramente menor que con coincidencia exacta (ejemplo: 97–99).
+El algoritmo seguirá considerando un match válido.
+
+3.If two records get a very similar score, how should the algorithm decide which one is the best match?
+El código recorre todos los scorers y guarda el último best_match válido con score mayor o igual al score_cutoff.
+Si dos registros tienen scores casi iguales, el que quede como best_match dependerá del orden en que los scorers lo encuentren.
+No hay desempate adicional: simplemente se guarda el último mejor resultado.
+
+4. What happens if the Name matches but the Email is very different?
+En execute_dynamic_matching(), todas las columnas seleccionadas se concatenan en un único string (query).
+Si el nombre coincide pero el email no, el string completo cambia mucho y el score disminuye.
+Ejemplo: "JuanPerez@gmail.com" vs "JuanPerez@outlook.com" puede bajar de un score cercano a 100 hasta ~70.
+El algoritmo puede no reconocer el match aunque sea la misma persona.
+
+5. What are the limitations of treating all columns with the same importance?
+El código no asigna pesos a las columnas; simplemente concatena todo.
+Un cambio en un campo crítico (apellido) y en un campo secundario (teléfono o email) afecta exactamente igual al score.
+Esto puede generar errores: un correo distinto puede pesar tanto como un nombre distinto.
+
+6. Can you think of real situations (e.g., customer databases, hospital records, e-commerce) where fuzzy matching might create problems if all columns are treated equally?
+Clientes: si un usuario cambia su correo pero mantiene el mismo nombre, el score puede bajar demasiado y no reconocerlo.
+Hospitales: dos pacientes con el mismo nombre pero distinto número de seguridad social podrían confundirse.
+E-commerce: dos clientes con nombres muy similares pero diferentes emails podrían confundirse si el email no se prioriza.

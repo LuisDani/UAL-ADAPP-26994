@@ -2,6 +2,7 @@ from fuzzFunctions import execute_dynamic_matching
 import pandas as pd
 import os
 import mysql.connector
+from datetime import datetime
 
 params_dict = {
     "sourceDatabase": "crm",          
@@ -16,8 +17,16 @@ params_dict = {
 }
 
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
-df = pd.DataFrame(resultados)
+resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 
+# Recorres los resultados y muestras solo lo que te importa
+for r in resultados:
+    print(f"Query: {r['match_query']}")
+    print(f"Match Result: {r['match_result']}")
+    print(f"Score: {r['score']}")
+    print("-" * 40)
+
+df = pd.DataFrame(resultados)
 def export_or_print_result(resultados, df):
     if df.empty or not resultados:
         print("No se encontraron coincidencias con el puntaje especificado.")
@@ -323,9 +332,6 @@ def import_data():
             return None
         
         print("Archivo importado exitosamente.")
-        print(f"Dimensiones del DataFrame: {df.shape[0]} filas x {df.shape[1]} columnas")
-        print("Columnas disponibles:")
-        print(", ".join(df.columns))
         return df
         
     except Exception as e:
@@ -336,7 +342,7 @@ def insert_to_mysql_with_sp(df):
     if df is None or df.empty:
         print("DataFrame vacío. No hay datos para insertar.")
         return
-    
+
     try:
         connection = mysql.connector.connect(
             host='localhost',
@@ -347,25 +353,50 @@ def insert_to_mysql_with_sp(df):
         cursor = connection.cursor()
 
         required_columns = [
-            'nombre', 'apellido', 'email', 'match_query', 
-            'match_result', 'score', 'match_result_values', 
+            'nombre', 'apellido', 'email', 'match_query',
+            'match_result', 'score', 'match_result_values',
             'destTable', 'sourceTable'
         ]
 
         # Filtrar por high score
-        df['score_numeric'] = pd.to_numeric(df['score'].astype(str).str.replace('%', ''), errors='coerce')
+        df['score_numeric'] = pd.to_numeric(
+            df['score'].astype(str).str.replace('%', ''), 
+            errors='coerce'
+        )
         df_high = df[df['score_numeric'] >= 97].copy()
-        
+
         if df_high.empty:
             print("No hay registros con score >= 97% para insertar.")
             return
 
+        # Hora actual para todos los registros
+        now = datetime.now()
+
         for _, row in df_high.iterrows():
             args = tuple(row.get(col, None) for col in required_columns)
+            args += (now,)  
             cursor.callproc('insert_matched_record', args)
 
         connection.commit()
         print(f"{len(df_high)} registros insertados usando stored procedure.")
+
+        # Preguntar al usuario si quiere ver los datos recién insertados
+        ver_datos = input("¿Desea ver los datos que se insertaron en la tabla matched_record? (s/n): ").strip().lower()
+        if ver_datos == "s":
+            cursor.execute("""
+                SELECT nombre, apellido, email, match_query, match_result, 
+                       score, match_result_values, destTable, sourceTable, fecha_creacion, record_id
+                FROM matched_record 
+                ORDER BY fecha_creacion DESC
+                LIMIT %s
+            """, (len(df_high),))
+            rows = cursor.fetchall()
+            if rows:
+                print("Datos insertados recientemente en matched_record:")
+                for row in rows:
+                    print(row)
+            else:
+                print("No se encontraron registros recién insertados.")
 
     except mysql.connector.Error as error:
         print(f"Error de MySQL: {error}")
@@ -375,121 +406,8 @@ def insert_to_mysql_with_sp(df):
             connection.close()
             print("Conexión a MySQL cerrada.")
 
-    if df is None or df.empty:
-        print("DataFrame vacío. No hay datos para insertar.")
-        return
-    
-    try:
-        connection = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',
-            database='dbo'
-        )
-        
-        cursor = connection.cursor()
-        
-        # Nombre fijo de la tabla
-        table_name = "matched_record"
-        
-        # Columnas fijas que debe tener la tabla
-        required_columns = [
-            'nombre', 'apellido', 'email', 'match_query', 
-            'match_result', 'score', 'match_result_values', 
-            'destTable', 'sourceTable'
-        ]
-        
-        # Crear tabla con las columnas requeridas (todas como TEXT)
-        column_definitions = [f"`{col}` TEXT" for col in required_columns]
-        create_table_query = f"CREATE TABLE IF NOT EXISTS `{table_name}` ({', '.join(column_definitions)})"
-        cursor.execute(create_table_query)
-        connection.commit()
-        
-        # DEBUG: Mostrar información del DataFrame recibido
-        print(f"DataFrame recibido con {len(df)} registros y columnas: {list(df.columns)}")
-        print(f"Primeros valores de 'score': {df['score'].head().tolist() if 'score' in df.columns else 'Columna score no encontrada'}")
-        
-        # Filtrar solo high matches (score >= 97)
-        if 'score' in df.columns:
-            # Convertir score a numérico - manejar el símbolo %
-            def convert_score(score_value):
-                if isinstance(score_value, str):
-                    # Remover el símbolo % y convertir a float
-                    score_value = score_value.replace('%', '').strip()
-                try:
-                    return float(score_value)
-                except (ValueError, TypeError):
-                    return None
-            
-            df['score_numeric'] = df['score'].apply(convert_score)
-            print(f"Scores convertidos: {df['score_numeric'].head().tolist()}")
-            
-            df_high_matches = df[df['score_numeric'] >= 97].copy()
-            df_high_matches.drop('score_numeric', axis=1, inplace=True, errors='ignore')
-            print(f"Registros con score >= 97: {len(df_high_matches)}")
-        else:
-            print("No se encontró columna 'score' en el DataFrame. Insertando todos los registros.")
-            df_high_matches = df.copy()
-        
-        if df_high_matches.empty:
-            print("No hay registros con score >= 97% para insertar.")
-            # Mostrar más información para debug
-            if 'score_numeric' in df.columns:
-                print(f"Valores únicos de score: {df['score_numeric'].unique()}")
-                print(f"Valores máximos y mínimos: max={df['score_numeric'].max()}, min={df['score_numeric'].min()}")
-            return
-        
-        # DEBUG: Mostrar los registros que se van a insertar
-        print("Registros a insertar:")
-        print(df_high_matches.head())
-        
-        # Preparar datos para inserción - mapear columnas existentes y dejar vacías las faltantes
-        data_to_insert = []
-        for _, row in df_high_matches.iterrows():
-            values = []
-            for col in required_columns:
-                if col in df_high_matches.columns:
-                    value = row[col]
-                    # Manejar valores NaN/None
-                    if pd.isna(value):
-                        values.append(None)
-                    elif isinstance(value, (dict, list)):
-                        values.append(str(value))
-                    else:
-                        values.append(str(value))
-                else:
-                    values.append(None)  # Columna faltante, insertar NULL
-            data_to_insert.append(tuple(values))
-        
-        print(f"Total de registros preparados para inserción: {len(data_to_insert)}")
-        
-        # Insertar datos
-        placeholders = ', '.join(['%s'] * len(required_columns))
-        columns_str = ', '.join([f"`{col}`" for col in required_columns])
-        insert_query = f"INSERT INTO `{table_name}` ({columns_str}) VALUES ({placeholders})"
-        
-        # Insertar todos los registros de una vez (o en lotes si son muchos)
-        if data_to_insert:
-            cursor.executemany(insert_query, data_to_insert)
-            connection.commit()
-            print(f"{len(data_to_insert)} registros insertados exitosamente en la tabla '{table_name}'.")
-        else:
-            print("No hay datos para insertar después del procesamiento.")
-        
-    except mysql.connector.Error as error:
-        print(f"Error al conectar o insertar en MySQL: {error}")
-    except Exception as e:
-        print(f"Error inesperado: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        # Cerrar conexión
-        if 'connection' in locals() and connection.is_connected():
-            cursor.close()
-            connection.close()
-            print("Conexión a MySQL cerrada.")
 
 
 #matched_record(df)
-df_importado = import_data()
-insert_to_mysql_with_sp(df_importado)
+#df_importado = import_data()
+#insert_to_mysql_with_sp(df_importado)

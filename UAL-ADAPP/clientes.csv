@@ -193,7 +193,7 @@ cliente_id,nombre,apellido,email,fecha_registro
 192,Adam,Andrews,adam.andrews192@example.com,13/08/2024 11:04
 193,Michelle,Reed,michelle.reed193@example.com,04/01/2021 09:54
 194,James,Harrison,james.harrison194@example.com,11/12/2024 00:49
-195,Meghan,Perez,meghan.perez195@example.com,23/03/2020 20:50
+195,Meghan,Pérez,meghan.perez195@example.com,23/03/2020 20:50
 196,Leslie,Webb,leslie.webb196@example.com,24/07/2024 22:13
 197,Jennifer,Garrett,jennifer.garrett197@example.com,05/03/2022 12:48
 198,Jamie,Bullock,jamie.bullock198@example.com,14/05/2022 14:08
