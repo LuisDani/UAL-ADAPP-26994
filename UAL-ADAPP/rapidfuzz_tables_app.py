@@ -13,12 +13,15 @@ params_dict = {
         "nombre": "first_name",  
         "apellido": "last_name",     
         "email": "email",
+    },
+    "column_weights":{
+        "first_name": 2,
+        "last_name": 3,
+        "email": 5
     }
 }
 
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
-resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
-
 # Recorres los resultados y muestras solo lo que te importa
 for r in resultados:
     print(f"Query: {r['match_query']}")
