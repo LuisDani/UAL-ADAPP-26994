@@ -3,6 +3,9 @@ import pandas as pd
 import os
 import mysql.connector
 from datetime import datetime
+from config_loader import get_final_column_weights
+from config_loader import load_from_db, load_from_file, get_final_column_weights
+from config_loader import menu_modificar_pesos, menu_consultar_auditoria
 
 params_dict = {
     "sourceDatabase": "crm",          
@@ -12,17 +15,36 @@ params_dict = {
     "src_dest_mappings": {
         "nombre": "first_name",  
         "apellido": "last_name",     
-        "email": "email",
-    },
-    "column_weights":{
-        "first_name": 2,
-        "last_name": 3,
-        "email": 5
+        "email": "email"
     }
 }
 
+print("¿Desea modificar algún peso de columna antes de ejecutar el matching? (s/n)")
+if input().strip().lower() == "s":
+    menu_modificar_pesos()
+print("¿Desea consultar el historial de auditoría de cambios de pesos? (s/n)")
+if input().strip().lower() == "s":
+    menu_consultar_auditoria()
+print("¿Desea continuar con la ejecución del matching? (s/n)")
+if input().strip().lower() == "s":
+    print("=== Valores en BD ===")
+    print(load_from_db())
+
+    print("\n=== Valores en Archivo ===")
+    print(load_from_file())
+
+    print("\n=== Pesos Finales (Resolviendo Conflictos) ===")
+    print(get_final_column_weights())
+
+params_dict["column_weights"] = get_final_column_weights()
+
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
-# Recorres los resultados y muestras solo lo que te importa
+
+# Aquí cargas los pesos ya resueltos (archivo o BD)
+params_dict["column_weights"] = get_final_column_weights()
+
+resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
+
 for r in resultados:
     print(f"Query: {r['match_query']}")
     print(f"Match Result: {r['match_result']}")

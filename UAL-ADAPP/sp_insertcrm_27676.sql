@@ -77,3 +77,46 @@ BEGIN
     );
 END //
 DELIMITER ;
+
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_update_peso_columna (
+    IN p_columna VARCHAR(100),
+    IN p_peso INT,
+    IN p_usuario_actualizacion VARCHAR(100)
+)
+BEGIN
+    DECLARE v_count INT;
+    DECLARE v_peso_anterior INT;
+
+    -- Validar rango permitido
+    IF p_peso < 1 OR p_peso > 50 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El peso debe estar entre 1 y 50';
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM config_pesos_columnas
+    WHERE columna = p_columna;
+
+    IF v_count > 0 THEN
+        SELECT peso INTO v_peso_anterior FROM config_pesos_columnas WHERE columna = p_columna;
+        UPDATE config_pesos_columnas
+        SET peso = p_peso,
+            usuario_actualizacion = p_usuario_actualizacion,
+            fecha_actualizacion = NOW()
+        WHERE columna = p_columna;
+        -- Registrar en auditoría
+        INSERT INTO config_pesos_audit (columna, peso_anterior, peso_nuevo, fecha_cambio, usuario_actualizacion)
+        VALUES (p_columna, v_peso_anterior, p_peso, NOW(), p_usuario_actualizacion);
+    ELSE
+        INSERT INTO config_pesos_columnas (columna, peso, usuario_actualizacion)
+        VALUES (p_columna, p_peso, p_usuario_actualizacion);
+        -- Registrar en auditoría (peso anterior = 0)
+        INSERT INTO config_pesos_audit (columna, peso_anterior, peso_nuevo, fecha_cambio, usuario_actualizacion)
+        VALUES (p_columna, 0, p_peso, NOW(), p_usuario_actualizacion);
+    END IF;
+END$$
+
+DELIMITER ;

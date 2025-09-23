@@ -1,0 +1,23 @@
+[
+  {
+    "columna": "email",
+    "peso_anterior": 15,
+    "peso_nuevo": 25,
+    "fecha_cambio": "2025-09-23 09:39:41",
+    "usuario_actualizacion": "admin_file"
+  },
+  {
+    "columna": "first_name",
+    "peso_anterior": 10,
+    "peso_nuevo": 5,
+    "fecha_cambio": "2025-09-23 09:42:27",
+    "usuario_actualizacion": "admin_file"
+  },
+  {
+    "columna": "last_name",
+    "peso_anterior": 1,
+    "peso_nuevo": 9,
+    "fecha_cambio": "2025-09-23 09:46:10",
+    "usuario_actualizacion": "admin_file"
+  }
+]
