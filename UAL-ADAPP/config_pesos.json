@@ -1,17 +1,17 @@
 {
   "first_name": {
-    "peso": 5,
-    "fecha_actualizacion": "2025-09-23 09:42:27",
+    "peso": 4,
+    "fecha_actualizacion": "2025-09-23 19:32:06",
     "usuario_actualizacion": "admin_file"
   },
   "last_name": {
-    "peso": 9,
-    "fecha_actualizacion": "2025-09-23 09:46:10",
+    "peso": 10,
+    "fecha_actualizacion": "2025-09-23 19:32:23",
     "usuario_actualizacion": "admin_file"
   },
   "email": {
-    "peso": 25,
-    "fecha_actualizacion": "2025-09-23 09:39:41",
+    "peso": 6,
+    "fecha_actualizacion": "2025-09-23 19:19:07",
     "usuario_actualizacion": "admin_file"
   }
 }
