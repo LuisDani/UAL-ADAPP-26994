@@ -54,5 +54,26 @@
     "peso_nuevo": 10,
     "fecha_cambio": "2025-09-23 19:32:23",
     "usuario_actualizacion": "admin_file"
+  },
+  {
+    "columna": "last_name",
+    "peso_anterior": 10,
+    "peso_nuevo": 5,
+    "fecha_cambio": "2025-09-24 10:13:29",
+    "usuario_actualizacion": "admin_file"
+  },
+  {
+    "columna": "last_name",
+    "peso_anterior": 5,
+    "peso_nuevo": 7,
+    "fecha_cambio": "2025-09-24 10:47:34",
+    "usuario_actualizacion": "admin_file"
+  },
+  {
+    "columna": "email",
+    "peso_anterior": 6,
+    "peso_nuevo": 12,
+    "fecha_cambio": "2025-09-24 10:50:28",
+    "usuario_actualizacion": "admin_file"
   }
 ]

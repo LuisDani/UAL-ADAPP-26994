@@ -28,13 +28,15 @@ if input().strip().lower() == "s":
 print("¿Desea continuar con la ejecución del matching? (s/n)")
 if input().strip().lower() == "s":
     print("=== Valores en BD ===")
-    print(load_from_db())
-
+    db_data = pd.DataFrame(load_from_db())
+    print(db_data)
     print("\n=== Valores en Archivo ===")
-    print(load_from_file())
-
+    file_data = pd.DataFrame(load_from_file())
+    print(file_data)
     print("\n=== Pesos Finales (Resolviendo Conflictos) ===")
-    print(get_final_column_weights())
+    pesos = get_final_column_weights()
+    df_pesos = pd.DataFrame(list(pesos.items()), columns=["Columna", "Peso"])
+    print(df_pesos)
 
 params_dict["column_weights"] = get_final_column_weights()
 
